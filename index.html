@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Экскурсия</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+    <link rel="manifest" href="manifest.json">
+
+    <meta name="theme-color" content="#000000">
+
+    <!-- Обязательные PWA мета-теги -->
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+
+    <script src="map-data.js"></script>
+
+    <style>
+        body { margin: 0; font-family: sans-serif; }
+        #map { width: 100vw; height: 100vh; }
+
+        .mode-panel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,.2);
+        }
+
+        .mode-panel button {
+            display: block;
+            width: 100%;
+            margin-bottom: 6px;
+            padding: 8px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+    </style>
+
+</head>
+<body>
+
+<div class="mode-panel">
+    <button onclick="setMode('map')">🗺 Карта</button>
+    <button onclick="setMode('tour')">🚶 Экскурсия</button>
+</div>
+
+<div id="map"></div>
+
+<script>
+/* ---------- НАСТРОЙКИ ---------- */
+
+const startPoint = [44.941992, 34.131292];
+const bounds = [
+    [44.934524, 34.125260],
+    [44.946381, 34.136753]
+];
+
+/* ---------- КАРТА ---------- */
+
+const map = L.map('map', {
+    center: startPoint,
+    zoom: 16,
+    minZoom: 16,
+    maxZoom: 19,
+    maxBounds: bounds,
+    maxBoundsViscosity: 1
+});
+
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19
+}).addTo(map);
+
+/* ---------- СТИЛИ ТОЧЕК ---------- */
+
+const normalStyle = {
+    radius: 8,
+    color: "#555",
+    weight: 2,
+    fillColor: "#999",
+    fillOpacity: 0.8
+};
+
+const startStyle = {
+    radius: 10,
+    color: "#0a7",
+    weight: 3,
+    fillColor: "#2ecc71",
+    fillOpacity: 1
+};
+
+const endStyle = {
+    radius: 10,
+    color: "#c00",
+    weight: 3,
+    fillColor: "#e74c3c",
+    fillOpacity: 1
+};
+
+/* ---------- ЛОГИКА ---------- */
+
+let mode = "map";
+let tourStart = null;
+let tourEnd = null;
+
+function setMode(m) {
+    resetTour();
+    mode = m;
+
+    if (mode === "map") {
+        showAllPoints();
+    }
+
+    if (mode === "tour") {
+        showTourStartPoints();
+    }
+}
+
+/* ---------- ТОЧКИ ---------- */
+
+locations.forEach(loc => {
+    const point = L.circleMarker([loc.lat, loc.lng], normalStyle)
+        .bindTooltip(loc.name);
+
+    point.on("click", () => {
+
+        // обычный режим карты
+        if (mode === "map") {
+            window.location.href = `pano.html?id=${loc.id}`;
+            return;
+        }
+
+        // режим экскурсии
+        if (!tourStart) {
+            tourStart = loc;
+            point.setStyle(startStyle);
+            return;
+        }
+
+        if (!tourEnd && loc.id !== tourStart.id) {
+            tourEnd = loc;
+            point.setStyle(endStyle);
+            startTour();
+            return;
+        }
+
+        resetTour();
+    });
+
+    loc._point = point;
+});
+
+/* ---------- ФУНКЦИИ ---------- */
+
+function resetTour() {
+    tourStart = null;
+    tourEnd = null;
+
+    locations.forEach(l => {
+        l._point.setStyle(normalStyle);
+    });
+}
+
+function startTour() {
+
+    window.location.href =
+        `pano.html?mode=tour&start=${tourStart.id}&end=${tourEnd.id}&step=0`;
+}
+
+function showAllPoints() {
+    locations.forEach(l => {
+        if (!map.hasLayer(l._point)) {
+            l._point.addTo(map);
+        }
+    });
+}
+
+function hideAllPoints() {
+    locations.forEach(l => {
+        if (map.hasLayer(l._point)) {
+            map.removeLayer(l._point);
+        }
+    });
+}
+
+function showTourPoints(startId, endId) {
+    hideAllPoints();
+
+    const path = routes[`${startId}-${endId}`];
+    if (!path) return;
+
+    path.forEach(id => {
+        const loc = locations.find(l => l.id === id);
+        if (loc && !map.hasLayer(loc._point)) {
+            loc._point.addTo(map);
+        }
+    });
+}
+
+function showTourStartPoints() {
+    hideAllPoints();
+
+    locations.forEach(l => {
+        if (l.tour === true) {
+            l._point.addTo(map);
+        }
+    });
+}
+
+</script>
+
+</body>
+</html>
