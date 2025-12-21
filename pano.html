@@ -223,8 +223,6 @@ addEventListener("mousemove", e => {
     sx = e.clientX; sy = e.clientY;
 });
 
-addEventListener("mouseup", () => dragging = false);
-
 /* ---------- TOUCH ---------- */
 addEventListener("touchstart", e => {
     sx = e.touches[0].clientX;
@@ -238,7 +236,14 @@ addEventListener("touchmove", e => {
     sy = e.touches[0].clientY;
 });
 
-addEventListener("touchend", () => checkHotspot(sx, sy));
+addEventListener("mouseup", e => {
+    dragging = false;
+    checkHotspot(e.clientX, e.clientY);
+});
+
+addEventListener("touchend", () => {
+    checkHotspot(sx, sy);
+});
 
 function goToMap() {
     location.href = "index.html";
