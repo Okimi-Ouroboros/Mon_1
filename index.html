@@ -11,7 +11,6 @@
 
     <meta name="theme-color" content="#000000">
 
-    <!-- Обязательные PWA мета-теги -->
     <link rel="apple-touch-icon" href="icons/icon-192.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -59,15 +58,12 @@
 <div id="map"></div>
 
 <script>
-/* ---------- НАСТРОЙКИ ---------- */
 
 const startPoint = [44.941992, 34.131292];
 const bounds = [
     [44.934524, 34.125260],
     [44.946381, 34.136753]
 ];
-
-/* ---------- КАРТА ---------- */
 
 const map = L.map('map', {
     center: startPoint,
@@ -81,8 +77,6 @@ const map = L.map('map', {
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19
 }).addTo(map);
-
-/* ---------- СТИЛИ ТОЧЕК ---------- */
 
 const normalStyle = {
     radius: 16,
@@ -108,8 +102,6 @@ const endStyle = {
     fillOpacity: 1
 };
 
-/* ---------- ЛОГИКА ---------- */
-
 let mode = "map";
 let tourStart = null;
 let tourEnd = null;
@@ -127,21 +119,17 @@ function setMode(m) {
     }
 }
 
-/* ---------- ТОЧКИ ---------- */
-
 locations.forEach(loc => {
     const point = L.circleMarker([loc.lat, loc.lng], normalStyle)
         .bindTooltip(loc.name);
 
     point.on("click", () => {
 
-        // обычный режим карты
         if (mode === "map") {
             window.location.href = `pano.html?id=${loc.id}`;
             return;
         }
 
-        // режим экскурсии
         if (!tourStart) {
             tourStart = loc;
             point.setStyle(startStyle);
@@ -160,8 +148,6 @@ locations.forEach(loc => {
 
     loc._point = point;
 });
-
-/* ---------- ФУНКЦИИ ---------- */
 
 function resetTour() {
     tourStart = null;
